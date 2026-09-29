@@ -35,9 +35,12 @@ jobs:
           sudo apt-get install -y \
             libvulkan-dev \
             libxkbcommon-dev \
+            libxkbcommon-x11-dev \
             libwayland-dev \
             libx11-dev \
             libx11-xcb-dev \
+            libxcursor-dev \
+            libxfixes-dev \
             libgles2-mesa-dev
 
       - name: Set up Go
