@@ -15,8 +15,12 @@ permissions:
 
 jobs:
   build:
-    name: Build
-    runs-on: ubuntu-latest
+    name: Build (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
 
     steps:
       - name: Checkout repository
@@ -24,12 +28,8 @@ jobs:
         with:
           submodules: recursive
 
-      - name: Initialize submodules
-        run: |
-          git submodule sync --recursive
-          git submodule update --init --recursive
-
-      - name: Install system dependencies
+      - name: Install Linux system dependencies
+        if: runner.os == 'Linux'
         run: |
           sudo apt-get update
           sudo apt-get install -y \
@@ -42,6 +42,15 @@ jobs:
             libxcursor-dev \
             libxfixes-dev \
             libgles2-mesa-dev
+
+      - name: Install Windows dependencies
+        if: runner.os == 'Windows'
+        shell: powershell
+        run: .\scripts\install_deps.ps1
+
+      - name: Install Unix dependencies
+        if: runner.os == 'macOS' || runner.os == 'Linux'
+        run: ./scripts/install_deps.sh
 
       - name: Set up Go
         uses: actions/setup-go@v5
@@ -52,12 +61,43 @@ jobs:
       - name: Download dependencies
         run: go mod download
 
-      - name: Build application
-        run: go build ./cmd/app/main.go
+      - name: Build application for amd64 (Windows)
+        if: runner.os == 'Windows'
+        shell: powershell
+        run: .\scripts\build_win_amd64.ps1
+
+      - name: Build application for arm64 (Windows)
+        if: runner.os == 'Windows'
+        shell: powershell
+        run: .\scripts\build_win_arm64.ps1
+
+      - name: Build application for amd64 (macOS)
+        if: runner.os == 'macOS'
+        shell: bash
+        run: ./scripts/build_mac_amd64.sh
+
+      - name: Build application for arm64 (macOS)
+        if: runner.os == 'macOS'
+        shell: bash
+        run: ./scripts/build_mac_arm64.sh
+
+      - name: Build application for amd64 (Linux)
+        if: runner.os == 'Linux'
+        shell: bash
+        run: ./scripts/build_linux_amd64.sh
+
+      - name: Build application for arm64 (Linux)
+        if: runner.os == 'Linux'
+        shell: bash
+        run: ./scripts/build_linux_arm64.sh
 
   tests:
-    name: Tests
-    runs-on: ubuntu-latest
+    name: Tests (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
 
     steps:
       - name: Checkout repository
@@ -65,12 +105,8 @@ jobs:
         with:
           submodules: recursive
 
-      - name: Initialize submodules
-        run: |
-          git submodule sync --recursive
-          git submodule update --init --recursive
-
-      - name: Install system dependencies
+      - name: Install Linux system dependencies
+        if: runner.os == 'Linux'
         run: |
           sudo apt-get update
           sudo apt-get install -y \
@@ -83,6 +119,15 @@ jobs:
             libxcursor-dev \
             libxfixes-dev \
             libgles2-mesa-dev
+
+      - name: Install Windows dependencies
+        if: runner.os == 'Windows'
+        shell: powershell
+        run: .\scripts\install_deps.ps1
+
+      - name: Install Unix dependencies
+        if: runner.os == 'macOS' || runner.os == 'Linux'
+        run: ./scripts/install_deps.sh
 
       - name: Set up Go
         uses: actions/setup-go@v5

@@ -12,7 +12,7 @@ elif command -v magick convert &> /dev/null; then
     MAGICK_CMD="magick convert"
 fi
 
-echo "Building application"
+echo "🔨 Building application"
 mkdir -p "$BUILD_DIR" && \
 rm $APP_DIR/*.syso && \
 $MAGICK_CMD ./icons/icon.png -define icon:auto-resize=256,128,64,48,32,16 ./icons/icon.ico && \

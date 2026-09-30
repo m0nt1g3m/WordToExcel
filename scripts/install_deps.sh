@@ -1,43 +1,37 @@
 #!/bin/bash
 
-OS_TYPE="$(uname -s)"
+ensure_brew() {
+    if ! command -v brew &> /dev/null; then
+        echo "⚠️ Homebrew not found."
+        echo "📥 Installing Homebrew..."
+        /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+        
+        if [ -f "/opt/homebrew/bin/brew" ]; then
+            eval "$(/opt/homebrew/bin/brew shellenv)"
+        elif [ -f "/home/linuxbrew/.linuxbrew/bin/brew" ]; then
+            eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
+        fi
+    fi
+}
 
 install_imagemagick() {
-    case "$OS_TYPE" in
-        Darwin*)
-            if ! command -v brew &> /dev/null; then
-                echo "Ошибка: Homebrew не установлен. Установите brew или ImageMagick вручную."
-                exit 1
-            fi
-            echo "Установка ImageMagick через Homebrew..."
-            brew install imagemagick
-            ;;
-        Linux*)
-            if command -v apt-get &> /dev/null; then
-                sudo apt-get update && sudo apt-get install -y imagemagick
-            elif command -v dnf &> /dev/null; then
-                sudo dnf install -y imagemagick
-            elif command -v pacman &> /dev/null; then
-                sudo pacman -S --noconfirm imagemagick
-            else
-                echo "Ошибка: Не удалось определить пакетный менеджер. Установите ImageMagick вручную."
-                exit 1
-            fi
-            ;;
-    esac
+    ensure_brew
+    echo "📥 Installing ImageMagick via Homebrew..."
+    brew install imagemagick
 }
 
 if ! command -v magick &> /dev/null && ! command -v convert &> /dev/null; then
-    echo "ImageMagick не найден."
-    echo "Установка imagemagick..."
+    echo "ImageMagick not found."
     install_imagemagick
 else
-    echo "ImageMagick уже установлен."
+    echo "ImageMagick is already installed."
 fi
 
 if ! command -v rsrc &> /dev/null; then
-    echo "rsrc не найдена." 
-    echo "Установка через rsrc..."
+    echo "rsrc not found."
+    echo "📥 Installing rsrc..."
     go install github.com/akavel/rsrc@latest
-    export PATH="$PATH:$(go env GOPATH)/bin"
+    
+    GOPATH_BIN="$(go env GOPATH)/bin"
+    export PATH="$PATH:$GOPATH_BIN"
 fi
