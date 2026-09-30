@@ -41,7 +41,7 @@ jobs:
 
           - target_os: macos
             arch: amd64
-            os: macos-13
+            os: macos-latest
             script: ./scripts/build_mac_amd64.sh
           - target_os: macos
             arch: arm64
@@ -113,7 +113,7 @@ jobs:
 
           - target_os: macos
             arch: amd64
-            os: macos-13
+            os: macos-latest
           - target_os: macos
             arch: arm64
             os: macos-latest
