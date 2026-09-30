@@ -37,3 +37,6 @@ go.work.sum
 *.xlsx
 
 **/.DS_Store
+*.icns
+**/AppIcon.iconset/
+build/
