@@ -22,8 +22,8 @@ $IconsDir   = Join-Path $ProjectDir "icons"
 $AppName    = "WordExcel"
 $TargetOs   = "windows"
 $TargetArch = "arm64"
-$OutputExe  = Join-Path $BuildDir "$AppName_$TargetOs_$TargetArch.exe"
-$InstallerExe = Join-Path $BuildDir "$AppName_$TargetOs_$TargetArch_installer.exe"
+$OutputExe  = Join-Path $BuildDir ("{0}_{1}_{2}.exe" -f $AppName, $TargetOs, $TargetArch)
+$InstallerExe = Join-Path $BuildDir ("{0}_{1}_{2}_installer.exe" -f $AppName, $TargetOs, $TargetArch)
 
 $SrcImg = Join-Path $IconsDir "icon_win.png"
 if (-not (Test-Path $SrcImg)) {

@@ -35,6 +35,10 @@ New-Item -ItemType Directory -Path $installerSourceDir -Force | Out-Null
 Copy-Item $SourceExePath $installerSourceExe -Force
 
 $installerBaseName = [System.IO.Path]::GetFileNameWithoutExtension($OutputInstallerPath)
+if ([string]::IsNullOrWhiteSpace($installerBaseName)) {
+    throw "Installer output filename must have a non-empty basename: $OutputInstallerPath"
+}
+
 $iconPath = Join-Path $PSScriptRoot "..\icons\icon.ico"
 if (-not (Test-Path $iconPath)) {
     $iconPath = Join-Path $PSScriptRoot "..\icons\icon_win.png"
