@@ -1,4 +1,20 @@
-﻿$ErrorActionPreference = "Stop"
+﻿param(
+    [string]$AppVersion = $env:APP_VERSION
+)
+
+$ErrorActionPreference = "Stop"
+
+if (-not $AppVersion) {
+    $AppVersion = $env:GITHUB_REF_NAME
+}
+
+if ($AppVersion -and $AppVersion.StartsWith("v")) {
+    $AppVersion = $AppVersion.Substring(1)
+}
+
+if ([string]::IsNullOrWhiteSpace($AppVersion)) {
+    $AppVersion = "0.0.0-dev"
+}
 
 $ProjectDir = Get-Location
 $BuildDir   = Join-Path $ProjectDir "build\win\arm64"
@@ -77,7 +93,7 @@ try {
     }
 }
 
-& "$PSScriptRoot\build_win_installer.ps1" -SourceExePath $OutputExe -OutputInstallerPath $InstallerExe -AppName $AppName -AppVersion "${env:APP_VERSION}"
+& "$PSScriptRoot\build_win_installer.ps1" -SourceExePath $OutputExe -OutputInstallerPath $InstallerExe -AppName $AppName -AppVersion $AppVersion
 
 Write-Host "✅ Windows build ready: $OutputExe" -ForegroundColor Green
 Write-Host "✅ Windows installer ready: $InstallerExe" -ForegroundColor Green

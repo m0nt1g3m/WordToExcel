@@ -101,6 +101,8 @@ jobs:
           echo "APP_VERSION=${RAW_VERSION#v}" >> "$GITHUB_ENV"
 
       - name: Build app with project script
+        env:
+          APP_VERSION: ${{ github.event_name == 'workflow_dispatch' && inputs.version || github.ref_name }}
         run: ${{ matrix.script }}
 
       - name: Upload build artifact

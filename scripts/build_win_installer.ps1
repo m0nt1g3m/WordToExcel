@@ -8,11 +8,19 @@ param(
     [Parameter(Mandatory = $true)]
     [string]$AppName,
 
-    [Parameter(Mandatory = $true)]
-    [string]$AppVersion
+    [Parameter(Mandatory = $false)]
+    [string]$AppVersion = ""
 )
 
 $ErrorActionPreference = "Stop"
+
+if ([string]::IsNullOrWhiteSpace($AppVersion)) {
+    $AppVersion = "0.0.0-dev"
+}
+
+if ($AppVersion.StartsWith("v")) {
+    $AppVersion = $AppVersion.Substring(1)
+}
 
 if (-not (Test-Path $SourceExePath)) {
     throw "Source EXE not found: $SourceExePath"
