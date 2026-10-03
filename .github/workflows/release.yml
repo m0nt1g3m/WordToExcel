@@ -1,0 +1,133 @@
+name: Release builds
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Release version (without v prefix, e.g. 1.2.3)'
+        required: true
+        default: '1.0.0'
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    name: Build (${{ matrix.target_os }}/${{ matrix.arch }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - target_os: linux
+            arch: amd64
+            os: ubuntu-latest
+            script: ./scripts/build_linux_amd64.sh
+            artifact_path: build/linux/amd64/*.deb
+          - target_os: linux
+            arch: arm64
+            os: ubuntu-24.04-arm
+            script: ./scripts/build_linux_arm64.sh
+            artifact_path: build/linux/arm64/*.deb
+
+          - target_os: windows
+            arch: amd64
+            os: windows-latest
+            script: .\scripts\build_win_amd64.ps1
+            artifact_path: build\win\amd64\*.exe
+          - target_os: windows
+            arch: arm64
+            os: windows-latest
+            script: .\scripts\build_win_arm64.ps1
+            artifact_path: build\win\arm64\*.exe
+
+          - target_os: macos
+            arch: amd64
+            os: macos-latest
+            script: ./scripts/build_mac_amd64.sh
+            artifact_path: build/macOS/amd64/*.dmg
+          - target_os: macos
+            arch: arm64
+            os: macos-latest
+            script: ./scripts/build_mac_arm64.sh
+            artifact_path: build/macOS/arm64/*.dmg
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Install Windows dependencies
+        if: runner.os == 'Windows'
+        shell: powershell
+        run: .\scripts\install_deps.ps1
+
+      - name: Install Unix dependencies
+        if: runner.os == 'macOS'
+        run: ./scripts/install_deps.sh
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: true
+
+      - name: Download dependencies
+        run: go mod download
+
+      - name: Set app version
+        shell: bash
+        run: |
+          RAW_VERSION="${{ github.event_name == 'workflow_dispatch' && inputs.version || github.ref_name }}"
+          echo "APP_VERSION=${RAW_VERSION#v}" >> "$GITHUB_ENV"
+
+      - name: Build app with project script
+        run: ${{ matrix.script }}
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.target_os }}-${{ matrix.arch }}
+          path: ${{ matrix.artifact_path }}
+          if-no-files-found: error
+
+  release:
+    name: Publish GitHub Release
+    needs: build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Resolve release tag
+        id: version
+        shell: bash
+        run: |
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            VERSION="v${{ inputs.version }}"
+          else
+            VERSION="${GITHUB_REF_NAME}"
+          fi
+          echo "tag=${VERSION}" >> "$GITHUB_OUTPUT"
+          echo "Resolved tag: ${VERSION}"
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: release-artifacts
+
+      - name: Show files to be published
+        run: find release-artifacts -type f | sort
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.version.outputs.tag }}
+          name: Release ${{ steps.version.outputs.tag }}
+          generate_release_notes: true
+          draft: false
+          prerelease: false
+          files: |
+            release-artifacts/**/*

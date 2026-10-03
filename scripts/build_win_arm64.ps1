@@ -69,12 +69,4 @@ try {
     }
 }
 
-Write-Host "⌛ Creating release zip archive..." -ForegroundColor Cyan
-$ZipPath = Join-Path $BuildDir "WordToExcel_win_arm64.zip"
-
-if (Test-Path $ZipPath) {
-    Remove-Item $ZipPath -Force
-}
-
-Compress-Archive -Path "$ExePath" -DestinationPath "$ZipPath" -Force
-Write-Host "✅ Created ZIP package: $ZipPath" -ForegroundColor Green
+Write-Host "✅ Windows build ready: $ExePath" -ForegroundColor Green
