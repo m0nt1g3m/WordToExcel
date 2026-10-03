@@ -1,6 +1,6 @@
 #!/bin/bash
 
-APP_NAME="WordToExcel"
+APP_NAME="WordExcel"
 APP_VERSION="${APP_VERSION:-0.1.0}"
 TARGET_OS="macos"
 TARGET_ARCH="amd64"
