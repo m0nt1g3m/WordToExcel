@@ -1,8 +1,7 @@
 #!/bin/bash
+set -euo pipefail
 
-BUILD_DIR="./build/linux/amd64"
+APP_VERSION="${APP_VERSION:-0.1.0}"
+export APP_VERSION
 
-echo "🔨 Building application"
-mkdir -p $BUILD_DIR && \
-env CGO_ENABLED=1 GOOS=linux GOARCH=amd64 go build -o $BUILD_DIR/WordToExcel ./cmd/app/main.go && \
-echo "✅ Build finished successfully"
+./scripts/build_linux_package.sh amd64
