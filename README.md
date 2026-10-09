@@ -33,7 +33,7 @@ WordToExcel is a Go desktop application for converting tables from DOCX files in
 1. Clone the repository:
 
    ```bash
-   git clone <repo-url>
+   git clone https://github.com/m0nt1g3m/WordToExcel.git
    cd WordToExcel
    ```
 

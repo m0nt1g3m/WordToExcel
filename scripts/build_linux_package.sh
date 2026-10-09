@@ -1,9 +1,10 @@
 #!/bin/bash
 set -euo pipefail
 
-APP_NAME="WordToExcel"
+APP_NAME="WordExcel"
 APP_VERSION="${APP_VERSION:-0.1.0}"
 APP_VERSION="${APP_VERSION#v}"
+TARGET_OS="linux"
 TARGET_ARCH="${1:-amd64}"
 
 case "$TARGET_ARCH" in
@@ -24,7 +25,7 @@ esac
 BUILD_DIR="./build/linux/${GOARCH}"
 PACKAGE_ROOT="${BUILD_DIR}/package"
 APP_BINARY_PATH="${BUILD_DIR}/${APP_NAME}"
-OUTPUT_PACKAGE_PATH="${BUILD_DIR}/${APP_NAME}_${APP_VERSION}_${PACKAGE_ARCH}.deb"
+OUTPUT_PACKAGE_PATH="${BUILD_DIR}/${APP_NAME}_${TARGET_OS}_${PACKAGE_ARCH}.deb"
 
 mkdir -p "${PACKAGE_ROOT}/usr/local/bin" \
          "${PACKAGE_ROOT}/usr/share/applications" \

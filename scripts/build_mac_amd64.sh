@@ -35,6 +35,7 @@ rm -rf "$ICONSET_DIR" && \
 
 echo "🔨 Building application" && \
 mkdir -p "$BUILD_DIR" && \
+rm -rf "$BUILD_DIR/${APP_NAME}.app" "$DMG_STAGE_DIR" && \
 env CGO_ENABLED=1 GOOS=darwin GOARCH=amd64 go build -x -o "$BUILD_DIR/$APP_NAME" ./cmd/app/main.go && \
 mkdir -p "$BUILD_DIR/${APP_NAME}.app/Contents/MacOS" "$BUILD_DIR/${APP_NAME}.app/Contents/Resources" && \
 cp "$BUILD_DIR/$APP_NAME" "$BUILD_DIR/${APP_NAME}.app/Contents/MacOS/" && \

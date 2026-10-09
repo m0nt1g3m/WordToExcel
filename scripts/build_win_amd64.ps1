@@ -1,8 +1,29 @@
-﻿$ErrorActionPreference = "Stop"
+﻿param(
+    [string]$AppVersion = $env:APP_VERSION
+)
+
+$ErrorActionPreference = "Stop"
+
+if (-not $AppVersion) {
+    $AppVersion = $env:GITHUB_REF_NAME
+}
+
+if ($AppVersion -and $AppVersion.StartsWith("v")) {
+    $AppVersion = $AppVersion.Substring(1)
+}
+
+if ([string]::IsNullOrWhiteSpace($AppVersion)) {
+    $AppVersion = "0.0.0-dev"
+}
 
 $ProjectDir = Get-Location
 $BuildDir   = Join-Path $ProjectDir "build\win\amd64"
 $IconsDir   = Join-Path $ProjectDir "icons"
+$AppName    = "WordExcel"
+$TargetOs   = "windows"
+$TargetArch = "amd64"
+$OutputExe  = Join-Path $BuildDir ("{0}_{1}_{2}.exe" -f $AppName, $TargetOs, $TargetArch)
+$InstallerExe = Join-Path $BuildDir ("{0}_{1}_{2}_installer.exe" -f $AppName, $TargetOs, $TargetArch)
 
 $SrcImg = Join-Path $IconsDir "icon_win.png"
 if (-not (Test-Path $SrcImg)) {
@@ -61,7 +82,10 @@ $ExePath = Join-Path $BuildDir "WordToExcel.exe"
 try {
     cd "$AppDir"
     go build -ldflags="-H windowsgui" -x -o "$ExePath" -buildvcs=false .
-    Write-Host "✅ Build finished successfully: $ExePath" -ForegroundColor Green
+    if (Test-Path $ExePath) {
+        Copy-Item "$ExePath" "$OutputExe" -Force
+    }
+    Write-Host "✅ Build finished successfully: $OutputExe" -ForegroundColor Green
     cd "$ProjectDir"
 } finally {
     if (Test-Path $SysoPath) {
@@ -69,4 +93,7 @@ try {
     }
 }
 
-Write-Host "✅ Windows build ready: $ExePath" -ForegroundColor Green
+& "$PSScriptRoot\build_win_installer.ps1" -SourceExePath $OutputExe -OutputInstallerPath $InstallerExe -AppName $AppName -AppVersion $AppVersion
+
+Write-Host "✅ Windows build ready: $OutputExe" -ForegroundColor Green
+Write-Host "✅ Windows installer ready: $InstallerExe" -ForegroundColor Green

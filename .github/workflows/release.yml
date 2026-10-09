@@ -26,34 +26,34 @@ jobs:
             arch: amd64
             os: ubuntu-latest
             script: ./scripts/build_linux_amd64.sh
-            artifact_path: build/linux/amd64/*.deb
+            artifact_path: build/linux/amd64/WordExcel_linux_amd64.deb
           - target_os: linux
             arch: arm64
             os: ubuntu-24.04-arm
             script: ./scripts/build_linux_arm64.sh
-            artifact_path: build/linux/arm64/*.deb
+            artifact_path: build/linux/arm64/WordExcel_linux_arm64.deb
 
           - target_os: windows
             arch: amd64
             os: windows-latest
             script: .\scripts\build_win_amd64.ps1
-            artifact_path: build\win\amd64\*.exe
+            artifact_path: build\win\amd64\WordExcel_windows_amd64*.exe
           - target_os: windows
             arch: arm64
             os: windows-latest
             script: .\scripts\build_win_arm64.ps1
-            artifact_path: build\win\arm64\*.exe
+            artifact_path: build\win\arm64\WordExcel_windows_arm64*.exe
 
           - target_os: macos
             arch: amd64
             os: macos-latest
             script: ./scripts/build_mac_amd64.sh
-            artifact_path: build/macOS/amd64/*.dmg
+            artifact_path: build/macOS/amd64/WordExcel_macos_amd64.dmg
           - target_os: macos
             arch: arm64
             os: macos-latest
             script: ./scripts/build_mac_arm64.sh
-            artifact_path: build/macOS/arm64/*.dmg
+            artifact_path: build/macOS/arm64/WordExcel_macos_arm64.dmg
 
     steps:
       - name: Checkout repository
@@ -101,6 +101,8 @@ jobs:
           echo "APP_VERSION=${RAW_VERSION#v}" >> "$GITHUB_ENV"
 
       - name: Build app with project script
+        env:
+          APP_VERSION: ${{ github.event_name == 'workflow_dispatch' && inputs.version || github.ref_name }}
         run: ${{ matrix.script }}
 
       - name: Upload build artifact
