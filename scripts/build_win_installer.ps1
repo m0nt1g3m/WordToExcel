@@ -87,6 +87,10 @@ if (-not (Test-Path $generatedInstaller)) {
     throw "Installer was not created: $generatedInstaller"
 }
 
-Copy-Item $generatedInstaller $OutputInstallerPath -Force
+$generatedInstallerFullPath = [System.IO.Path]::GetFullPath($generatedInstaller)
+$outputInstallerFullPath = [System.IO.Path]::GetFullPath($OutputInstallerPath)
+if (-not [string]::Equals($generatedInstallerFullPath, $outputInstallerFullPath, [System.StringComparison]::OrdinalIgnoreCase)) {
+    Copy-Item $generatedInstallerFullPath $outputInstallerFullPath -Force
+}
 
 Write-Host "✅ Windows installer created: $OutputInstallerPath" -ForegroundColor Green
