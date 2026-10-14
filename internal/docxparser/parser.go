@@ -10,6 +10,7 @@ import (
 	"wordtoexcel/internal/tablesync"
 )
 
+// ExtractTablesFromDocx reads the DOCX file and returns all non-empty tables found in it.
 func ExtractTablesFromDocx(path string) ([]tablesync.TableData, error) {
 	doc, err := docx.ReadDocxFile(path)
 	if err != nil {
@@ -28,7 +29,7 @@ func ExtractTablesFromDocx(path string) ([]tablesync.TableData, error) {
 		tblXML := strings.Split(tbl, "</w:tbl>")[0]
 		parsedTable := parseXMLTable(tblXML)
 
-		if len(parsedTable.Rows) > 0 {
+		if len(parsedTable.Headers) > 0 {
 			tables = append(tables, parsedTable)
 		}
 	}
@@ -36,6 +37,7 @@ func ExtractTablesFromDocx(path string) ([]tablesync.TableData, error) {
 	return tables, nil
 }
 
+// parseXMLTable converts a Word table XML fragment into a TableData structure.
 func parseXMLTable(tblXML string) tablesync.TableData {
 	var table tablesync.TableData
 	rows, err := parseRowsFromXML(tblXML)
@@ -66,6 +68,7 @@ func parseXMLTable(tblXML string) tablesync.TableData {
 	return table
 }
 
+// parseRowsFromXML extracts rows and cells from a Word table XML fragment.
 func parseRowsFromXML(tblXML string) ([][]string, error) {
 	decoder := xml.NewDecoder(strings.NewReader(tblXML))
 	var rows [][]string

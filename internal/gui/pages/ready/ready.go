@@ -2,7 +2,6 @@ package ready
 
 import (
 	"wordtoexcel/internal/gui/components"
-	"wordtoexcel/internal/gui/widgets"
 	"wordtoexcel/internal/manager"
 
 	"gioui.org/layout"
@@ -11,34 +10,32 @@ import (
 	"gioui.org/widget/material"
 )
 
-// Page is the success screen shown after all files are processed without critical errors.
+// Page handles rendering the successful completion screen after conversion.
 type Page struct {
 	manager      *manager.Manager
 	status       *components.Status
-	sourceButton *widget.Clickable
-	saveButton   *widget.Clickable
+	SourceButton *widget.Clickable
+	SaveButton   *widget.Clickable
 }
 
-// NewPage creates and returns a new ready Page.
-func NewPage(mgr *manager.Manager, status *components.Status) *Page {
+func NewPage(mgr *manager.Manager, statusComponent *components.Status) *Page {
 	return &Page{
 		manager:      mgr,
-		status:       status,
-		sourceButton: &widget.Clickable{},
-		saveButton:   &widget.Clickable{},
+		status:       statusComponent,
+		SourceButton: &widget.Clickable{},
+		SaveButton:   &widget.Clickable{},
 	}
 }
 
-// Draw renders the page for the current frame.
 func (p *Page) Draw(gtx layout.Context, theme *material.Theme) {
-	msgs, _, processing, readyToSave, done, total := p.manager.GetStatus()
+	statusMsgs, _, processing, readyToSave, done, total := p.manager.GetStatus()
 
-	// "Home" resets to the initial state.
-	if p.sourceButton.Clicked(gtx) {
+	// Handle the request to return to the initial screen.
+	if p.SourceButton.Clicked(gtx) {
 		p.manager.Reset()
 	}
-	// "Save Result" is only active while the temp file is available.
-	if readyToSave && p.saveButton.Clicked(gtx) {
+	// Handle the request to save results if they are ready to be exported.
+	if readyToSave && p.SaveButton.Clicked(gtx) {
 		p.manager.SaveResult()
 	}
 
@@ -49,28 +46,34 @@ func (p *Page) Draw(gtx layout.Context, theme *material.Theme) {
 		layout.Rigid(func(gtx layout.Context) layout.Dimensions {
 			return layout.Spacer{Height: unit.Dp(20)}.Layout(gtx)
 		}),
-		// Action buttons row.
 		layout.Rigid(func(gtx layout.Context) layout.Dimensions {
 			return layout.Center.Layout(gtx, func(gtx layout.Context) layout.Dimensions {
 				return layout.Flex{Axis: layout.Horizontal}.Layout(gtx,
+					// Back button to return to the main screen.
 					layout.Rigid(func(gtx layout.Context) layout.Dimensions {
-						return widgets.NewButton(gtx, theme, p.sourceButton, "Home")
+						button := material.Button(theme, p.SourceButton, "Main menu")
+						button.Inset = layout.UniformInset(unit.Dp(9))
+						button.CornerRadius = unit.Dp(15)
+						return button.Layout(gtx)
 					}),
-					// "Save Result" appears only until the file is saved.
+					// Save file button shown only until the save operation succeeds.
 					layout.Rigid(func(gtx layout.Context) layout.Dimensions {
 						if !readyToSave {
 							return layout.Dimensions{}
 						}
 						return layout.Inset{Left: unit.Dp(20)}.Layout(gtx, func(gtx layout.Context) layout.Dimensions {
-							return widgets.NewButton(gtx, theme, p.saveButton, "Save Result")
+							button := material.Button(theme, p.SaveButton, "Save result")
+							button.Inset = layout.UniformInset(unit.Dp(9))
+							button.CornerRadius = unit.Dp(15)
+							return button.Layout(gtx)
 						})
 					}),
 				)
 			})
 		}),
-		// Status / log panel with the final conversion report.
+		// Display the status panel to provide the user with a final conversion report.
 		layout.Rigid(func(gtx layout.Context) layout.Dimensions {
-			return p.status.Draw(gtx, theme, msgs, processing, done, total)
+			return p.status.Draw(gtx, theme, statusMsgs, processing, done, total)
 		}),
 	)
 }

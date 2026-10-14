@@ -43,40 +43,10 @@ func SelectFiles(fileList *[]string, status func(string)) {
 		if !strings.HasPrefix(filepath.Base(file), "~$") {
 			println(fmt.Sprintf("Selected file: %s", file))
 			if status != nil {
-				status(fmt.Sprintf("Word file selected: %s", file))
+				status(fmt.Sprintf("Selected Word file: %s", file))
 			}
 			*fileList = append(*fileList, file)
 		}
-	}
-}
-
-func SelectSource(fileList *[]string, status func(string), onSelected func(int)) {
-	if fileList == nil {
-		return
-	}
-
-	err := zenity.Question(
-		"Select Word documents source",
-		zenity.Title("Select source"),
-		zenity.OKLabel("Select files"),
-		zenity.ExtraButton("Select folder"),
-		zenity.CancelLabel("Cancel"),
-	)
-
-	switch err {
-	case nil:
-		SelectFiles(fileList, status)
-	case zenity.ErrExtraButton:
-		SelectFolder(fileList, status)
-	case zenity.ErrCanceled:
-		return
-	default:
-		log.Println("Error selecting source type:", err)
-	}
-
-	log.Printf("Lenght of fileList: %d", len(*fileList))
-	if onSelected != nil {
-		onSelected(len(*fileList))
 	}
 }
 
@@ -111,9 +81,9 @@ func SelectFolder(fileList *[]string, status func(string)) {
 			ext := strings.ToLower(filepath.Ext(path))
 			if ext == ".docx" || ext == ".doc" {
 				if !strings.HasPrefix(filepath.Base(path), "~$") {
-					println(fmt.Sprintf("Founded file: %s", path))
+					println(fmt.Sprintf("Found file: %s", path))
 					if status != nil {
-						status(fmt.Sprintf("Word file found: %s", path))
+						status(fmt.Sprintf("Found Word file: %s", path))
 					}
 					foundFiles = append(foundFiles, path)
 				}
@@ -142,7 +112,7 @@ func SelectFolder(fileList *[]string, status func(string)) {
 
 func SaveFile(sourcePath string, filePath *string) error {
 	if sourcePath == "" || filePath == nil {
-		return fmt.Errorf("file is not ready for saving")
+		return fmt.Errorf("file for saving is not prepared")
 	}
 
 	path, err := zenity.SelectFileSave(

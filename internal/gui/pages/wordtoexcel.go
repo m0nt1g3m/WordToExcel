@@ -22,75 +22,71 @@ import (
 )
 
 type WordToExcel struct {
-	Manager *manager.Manager
-	Theme   *material.Theme
-	routes  map[vars.AppState]Page
+	welcomePage    *welcome.MainPage
+	processingPage *processing.Page
+	readyPage      *ready.Page
+	errorPage      *errorpage.Page
+	statusComp     *components.Status
+	Manager        *manager.Manager
+	Theme          *material.Theme
 }
 
 func NewWindow() *WordToExcel {
+	theme := material.NewTheme()
+	theme.Palette.ContrastBg = colors.ColorActionMain
 	return &WordToExcel{
-		Theme:   material.NewTheme(),
+		Theme:   theme,
 		Manager: manager.NewManager(),
 	}
 }
 
-// Init configures the window and registers all pages.
 func (wte *WordToExcel) Init() {
-	wte.initTheme()
-	wte.initWindow()
+	wte.Theme = material.NewTheme()
+	wte.Theme.Palette.ContrastBg = colors.ColorActionMain
+	wte.Theme.Shaper = text.NewShaper(text.WithCollection(gofont.Collection()))
+	wte.Theme.Face = font.Typeface("Go")
+
+	wte.Manager.Window.Option(
+		app.Title("WordToExcel"),
+		app.Size(unit.Dp(640), unit.Dp(480)),
+		app.MaxSize(unit.Dp(1280), unit.Dp(720)),
+		app.MinSize(unit.Dp(1280), unit.Dp(720)),
+	)
 	wte.initPages()
 }
 
-func (wte *WordToExcel) initTheme() {
-	wte.Theme = material.NewTheme()
-	wte.Theme.Shaper = text.NewShaper(text.WithCollection(gofont.Collection()))
-	wte.Theme.Face = font.Typeface("Go")
-}
-
-func (wte *WordToExcel) initWindow() {
-	wte.Manager.Window.Option(
-		app.Title("WordToExcel"),
-		app.MinSize(unit.Dp(800), unit.Dp(600)),
-		app.MaxSize(unit.Dp(1024), unit.Dp(768)),
-		app.Size(unit.Dp(800), unit.Dp(600)),
-	)
-}
-
-// initPages constructs all pages and maps them to application states.
 func (wte *WordToExcel) initPages() {
-	status := components.NewStatus()
-
-	wte.routes = map[vars.AppState]Page{
-		vars.StateInit:          welcome.NewPage(wte.Manager, status),
-		vars.StateFilesSelected: welcome.NewPage(wte.Manager, status),
-		vars.StateProcessing:    processing.NewPage(wte.Manager, status),
-		vars.StateReady:         ready.NewPage(wte.Manager, status),
-		vars.StateError:         errorpage.NewPage(wte.Manager, status),
-	}
+	wte.statusComp = components.NewStatus()
+	wte.processingPage = processing.NewPage(wte.Manager, wte.statusComp)
+	wte.welcomePage = welcome.NewMainPage(wte.Manager, wte.statusComp)
+	wte.readyPage = ready.NewPage(wte.Manager, wte.statusComp)
+	wte.errorPage = errorpage.NewPage(wte.Manager, wte.statusComp)
 }
 
-// Draw is the main event loop. It dispatches rendering to the active page.
 func (wte *WordToExcel) Draw() {
 	for {
 		evt := wte.Manager.Window.Event()
 
 		switch e := evt.(type) {
 		case app.DestroyEvent:
+			wte.Manager.Cleanup()
 			os.Exit(0)
-
 		case app.FrameEvent:
 			var ops op.Ops
 			gtx := app.NewContext(&ops, e)
-
-			// Fill background.
 			paint.ColorOp{Color: colors.ColorBackground}.Add(gtx.Ops)
 			paint.PaintOp{}.Add(gtx.Ops)
 
-			// Dispatch to the active page.
-			if page, ok := wte.routes[wte.Manager.State()]; ok {
-				page.Draw(gtx, wte.Theme)
+			switch wte.Manager.State() {
+			case vars.StateInit, vars.StateFilesSelected:
+				wte.welcomePage.Draw(gtx, wte.Theme)
+			case vars.StateProcessing:
+				wte.processingPage.Draw(gtx, wte.Theme)
+			case vars.StateReady:
+				wte.readyPage.Draw(gtx, wte.Theme)
+			case vars.StateError:
+				wte.errorPage.Draw(gtx, wte.Theme)
 			}
-
 			e.Frame(gtx.Ops)
 		}
 	}

@@ -9,6 +9,9 @@ var (
 	ColorBackgroundLight = color.NRGBA{
 		R: 42, G: 42, B: 42, A: 255,
 	}
+	ColorBackgroundHover = color.NRGBA{
+		R: 51, G: 51, B: 51, A: 255,
+	}
 	ColorTextMain = color.NRGBA{
 		R: 245, G: 245, B: 245, A: 255,
 	}
@@ -19,7 +22,6 @@ var (
 		R: 189, G: 189, B: 189, A: 255,
 	}
 	ColorActionMain = color.NRGBA{
-		R: 33, G: 150, B: 243, A: 255,
+		R: 54, G: 113, B: 210, A: 255,
 	}
 )
-

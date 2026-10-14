@@ -2,6 +2,8 @@ package manager
 
 import (
 	"fmt"
+	"log"
+	"os"
 	"sync"
 	"wordtoexcel/internal/gui/components"
 	"wordtoexcel/internal/utils"
@@ -16,12 +18,12 @@ type Manager struct {
 	fileList       []string
 	outputFilePath string
 
-	statusMessages []string // list of messages to display in the interface console
+	statusMessages []string // list of messages displayed in the interface console
 	processing     bool     // flag indicating an active conversion process
-	readyToSave    bool     // flag allowing the display of the save button
+	readyToSave    bool     // flag allowing the save button to be displayed
 	progressDone   int      // number of successfully processed files
 	progressTotal  int      // total number of files in the current task
-	tempFilePath   string   // path to the temporary result before saving by the user
+	tempFilePath   string   // path to the temporary result before the user saves it
 
 	mu sync.RWMutex
 }
@@ -37,7 +39,7 @@ func (m *Manager) SetState(state vars.AppState) {
 	m.mu.Lock()
 	m.AppState = state
 	m.mu.Unlock()
-	
+
 	if m.Window != nil {
 		m.Window.Invalidate()
 	}
@@ -74,20 +76,26 @@ func (m *Manager) SetProgress(done, total int) {
 	}
 }
 
-// SelectFiles opens a dialog window for selecting files or folders.
-// Upon successful selection, it changes the application state to StateFilesSelected.
+// SelectFiles opens the Word file selection dialog.
 func (m *Manager) SelectFiles() {
-	components.SelectSource(&m.fileList, m.AddStatusMessage, func(count int) {
-		if count > 0 {
-			m.SetState(vars.StateFilesSelected)
-		}
-	})
+	components.SelectFiles(&m.fileList, m.AddStatusMessage)
+	if m.SelectedFilesCount() > 0 {
+		m.SetState(vars.StateFilesSelected)
+	}
+}
+
+// SelectFolder opens a folder picker and searches it for Word documents.
+func (m *Manager) SelectFolder() {
+	components.SelectFolder(&m.fileList, m.AddStatusMessage)
+	if m.SelectedFilesCount() > 0 {
+		m.SetState(vars.StateFilesSelected)
+	}
 }
 
 // ConvertFiles starts the document conversion process.
-// The method clears the previous log history and changes the application state to StateProcessing.
 func (m *Manager) ConvertFiles() {
 	m.mu.Lock()
+	oldTempFilePath := m.tempFilePath
 	m.statusMessages = nil
 	m.processing = true
 	m.readyToSave = false
@@ -95,6 +103,7 @@ func (m *Manager) ConvertFiles() {
 	m.progressDone = 0
 	m.progressTotal = 0
 	m.mu.Unlock()
+	removeTempFile(oldTempFilePath)
 
 	m.SetState(vars.StateProcessing)
 
@@ -132,14 +141,53 @@ func (m *Manager) SaveResult() {
 
 		m.mu.Lock()
 		m.readyToSave = false
+		m.tempFilePath = ""
 		m.mu.Unlock()
+		removeTempFile(tempPath)
 
 		m.AddStatusMessage(fmt.Sprintf("File saved: %s", m.outputFilePath))
 	}()
 }
 
 func (m *Manager) Reset() {
-	m.SetState(vars.StateInit)
+	m.mu.Lock()
+	tempFilePath := m.tempFilePath
+	m.AppState = vars.StateInit
+	m.fileList = nil
+	m.outputFilePath = ""
+	m.statusMessages = nil
+	m.processing = false
+	m.readyToSave = false
+	m.progressDone = 0
+	m.progressTotal = 0
+	m.tempFilePath = ""
+	m.mu.Unlock()
+
+	if tempFilePath != "" {
+		removeTempFile(tempFilePath)
+	}
+	if m.Window != nil {
+		m.Window.Invalidate()
+	}
+}
+
+// Cleanup removes the temporary conversion result when the application exits.
+func (m *Manager) Cleanup() {
+	m.mu.Lock()
+	tempFilePath := m.tempFilePath
+	m.tempFilePath = ""
+	m.readyToSave = false
+	m.mu.Unlock()
+	removeTempFile(tempFilePath)
+}
+
+func removeTempFile(path string) {
+	if path == "" {
+		return
+	}
+	if err := os.Remove(path); err != nil && !os.IsNotExist(err) {
+		log.Printf("Failed to remove temporary file %q: %v", path, err)
+	}
 }
 
 func NewManager() *Manager {
